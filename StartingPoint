@@ -1,0 +1,178 @@
+package com.shaik.hitwicketcommentary;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import android.support.v7.app.ActionBarActivity;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+
+public class StartingPoint extends ActionBarActivity implements OnClickListener {
+
+	EditText etMatchID;
+	Button bGetCommentary;
+	ListView lvCommentary;
+	ArrayList<String> al = new ArrayList<String>();
+	ArrayAdapter<String> listAdapter;
+	HttpClient client;
+	JSONObject jsonobj, json;
+	static String URL;
+	String matchIDString, commentary;
+	CommentaryAsync ca;
+	String PreviousTimeStamp = "0";
+	String previousTimeStamp;
+	Handler handler;
+	Timer timer;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_starting_point);
+
+		initialize();
+		bGetCommentary.setOnClickListener(this);
+
+	}
+
+	private void initialize() {
+		// TODO Auto-generated method stub
+		etMatchID = (EditText) findViewById(R.id.etMatchID);
+		bGetCommentary = (Button) findViewById(R.id.bGetCommentary);
+		lvCommentary = (ListView) findViewById(R.id.lvCommentary);
+		client = new DefaultHttpClient();
+		ca = new CommentaryAsync();	
+		handler = new Handler();
+		timer = new Timer();
+	}
+
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		matchIDString = etMatchID.getText().toString();
+		
+		// int matchIDInt = Integer.parseInt(matchIDString);
+		//handler.postDelayed(runnable, 5000);	
+		//Log.i("size", al.size()+"-");
+		timer.scheduleAtFixedRate(new TimerTask(){
+			synchronized public void run(){
+				ca = new CommentaryAsync();	
+				ca.execute("commentry");
+			}
+		}, 0, 30000);
+		
+	}
+	/*
+	public Runnable runnable = new Runnable() {
+		   @Override
+		   public void run() {
+			   ca.execute("commentry");
+		      handler.postDelayed(this, 5000);
+		   }
+		};
+		*/
+
+	public JSONObject allData(String matchID, String PreviousTimeStamp) {
+
+		URL = "http://hitwicket.com/apiOne/match/events?id=" + matchID
+				+ "&version_code=1&previous_timestamp=" + PreviousTimeStamp;
+		InputStream input = null;
+		String result= "";
+
+		HttpGet httpget = new HttpGet(URL);
+		try {
+			HttpResponse r = client.execute(httpget);
+			int status = r.getStatusLine().getStatusCode();
+			if (status == 200) {
+				HttpEntity e = r.getEntity();
+				String data = e.toString();
+				input = r.getEntity().getContent();
+				 if(input != null)
+		                result = convertInputStreamToString(input);
+				Log.i("Null Except", result);
+				//JSONArray jsondata = new JSONArray(data);
+				//jsonobj = jsondata.getJSONObject(0);
+				return new JSONObject(result);
+			}
+		} catch (ClientProtocolException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (JSONException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		return jsonobj;
+	}
+
+	private String convertInputStreamToString(InputStream input) throws IOException {
+		// TODO Auto-generated method stub
+		
+		 BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(input));
+	        String line = "";
+	        String result = "";
+	        while((line = bufferedReader.readLine()) != null)
+	            result += line;
+	 
+	        input.close();
+	        return result;
+	}
+
+	public class CommentaryAsync extends AsyncTask<String, Integer, String>{
+
+		@Override
+		protected String doInBackground(String... params) {
+			// TODO Auto-generated method stub
+			try {
+				json = allData(matchIDString, PreviousTimeStamp);
+				JSONArray events = json.getJSONArray("events");
+				previousTimeStamp = json.getString("previous_timestamp");
+				
+				for(int i=0; i<events.length(); i++){
+					String value = events.getJSONObject(i).getString("commentry");
+					al.add(value);
+				}
+				PreviousTimeStamp = previousTimeStamp;
+				
+			} catch (JSONException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return null;
+		}
+		@Override
+		protected void onPostExecute(String result) {
+			// TODO Auto-generated method stub
+			Log.i("from task size", al.size()+"-");
+			listAdapter = new ArrayAdapter<String>(StartingPoint.this,
+					android.R.layout.simple_list_item_1, al);
+			lvCommentary.setAdapter(listAdapter);
+			lvCommentary.setEnabled(true);
+		}
+	}
+	
+}
