@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="5dp"
+    android:weightSum="100" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="20"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:weightSum="100" >
+
+        <EditText
+            android:id="@+id/etMatchID"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="70"
+            android:ems="10"
+            android:hint="Give a match ID"
+            android:inputType="phone" >
+        </EditText>
+
+        <Button
+            android:id="@+id/bGetCommentary"
+            style="?android:attr/buttonStyleSmall"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="30"
+            android:text="Get" />
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/lvCommentary"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="80" >
+    </ListView>
+
+</LinearLayout>
